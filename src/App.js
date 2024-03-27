@@ -1,26 +1,50 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 function Dashboard() {
   const [records, setRecords] = useState([]);
+  const [formData, setFormData] = useState({
+    type: '',
+    name: '',
+    value: '',
+  });
 
   useEffect(() => {
-    // Fetch records from backend
-    // (Note: This is a placeholder; actual fetching needs integration with backend API)
-    const fetchedRecords = [
-      { _id: 1, type: 'A', name: 'example.com', value: '192.168.1.1' },
-      { _id: 2, type: 'AAAA', name: 'example.com', value: '2001:0db8:85a3:0000:0000:8a2e:0370:7334' },
-      { _id: 3, type: 'CNAME', name: 'www.example.com', value: 'example.com' },
-      { _id: 4, type: 'MX', name: 'example.com', value: 'mail.example.com' },
-      { _id: 5, type: 'NS', name: 'example.com', value: 'ns1.example.com' },
-      { _id: 6, type: 'PTR', name: '1.1.168.192.in-addr.arpa', value: 'example.com' },
-      { _id: 7, type: 'SOA', name: 'example.com', value: 'ns1.example.com' },
-      { _id: 8, type: 'SRV', name: '_sip._tcp.example.com', value: '10 50 5060 sipserver.example.com' },
-      { _id: 9, type: 'TXT', name: 'example.com', value: 'v=spf1 mx -all' },
-      { _id: 10, type: 'DNSSEC', name: 'example.com', value: 'DS record details' },
-    ];
-
-    setRecords(fetchedRecords);
+    fetchRecords();
   }, []);
+
+  const fetchRecords = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/dns');
+      setRecords(response.data);
+    } catch (error) {
+      console.error('Error fetching DNS records:', error);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      await axios.post('http://localhost:5000/api/dns/create', formData);
+      fetchRecords();
+      setFormData({
+        type: '',
+        name: '',
+        value: '',
+      });
+    } catch (error) {
+      console.error('Error creating DNS record:', error);
+    }
+  };
 
   const tableStyle = {
     width: '100%',
@@ -41,9 +65,66 @@ function Dashboard() {
     borderBottom: '1px solid #ddd',
   };
 
+  const formContainerStyle = {
+    marginBottom: '20px',
+  };
+
+  const formRowStyle = {
+    marginBottom: '15px',
+  };
+
+  const labelStyle = {
+    display: 'block',
+    marginBottom: '5px',
+  };
+
   return (
     <div>
       <h1>DNS Records</h1>
+
+      <div style={formContainerStyle}>
+        <h2>Add Record</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={formRowStyle}>
+            <label style={labelStyle}>
+              Type:
+              <input
+                type="text"
+                name="type"
+                value={formData.type}
+                onChange={handleInputChange}
+                style={{ marginLeft: '10px' }}
+              />
+            </label>
+          </div>
+          <div style={formRowStyle}>
+            <label style={labelStyle}>
+              Name:
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                style={{ marginLeft: '10px' }}
+              />
+            </label>
+          </div>
+          <div style={formRowStyle}>
+            <label style={labelStyle}>
+              Value:
+              <input
+                type="text"
+                name="value"
+                value={formData.value}
+                onChange={handleInputChange}
+                style={{ marginLeft: '10px' }}
+              />
+            </label>
+          </div>
+          <button type="submit" style={{ padding: '10px 15px', backgroundColor: '#007BFF', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Add Record</button>
+        </form>
+      </div>
+
       <table style={tableStyle}>
         <thead>
           <tr>
@@ -53,7 +134,7 @@ function Dashboard() {
           </tr>
         </thead>
         <tbody>
-          {records.map(record => (
+          {records.map((record) => (
             <tr key={record._id}>
               <td style={tdStyle}>{record.type}</td>
               <td style={tdStyle}>{record.name}</td>
